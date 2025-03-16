@@ -1,0 +1,10 @@
+# application.yml
+spring:
+  profiles:
+    include: private  # -> application-private.yml? ???
+
+logging.level:
+  org.springframework.web: DEBUG
+  com.myboard.board: DEBUG
+  org.springframework.jdbc.core: DEBUG
+  org.hibernate.SQL: DEBUG
