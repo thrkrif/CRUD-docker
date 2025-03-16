@@ -1,0 +1,65 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-crud-container2
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"  # 비밀번호 없이 MySQL을 실행하도록 설정
+      MYSQL_DATABASE: board_crud
+      MYSQL_USER: sanghun
+      MYSQL_PASSWORD: 1234
+    ports:
+      - "3306:3306"
+    networks:
+      - board-network
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  spring:
+    build:
+      context: .
+      dockerfile: Dockerfile   # ← 생략해도 기본값이지만 명시적으로 작성하면 더 명확해요
+    container_name: spring-crud-container2
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-crud-container2:3306/board_crud
+      SPRING_DATASOURCE_USERNAME: sanghun
+      SPRING_DATASOURCE_PASSWORD: 1234
+    depends_on:
+      - mysql
+    networks:
+      - board-network
+
+  frontend:
+    build:
+      context: ./src/main/frontend
+      dockerfile: Dockerfile   # ← 생략해도 기본값이지만 명시적으로 작성하면 더 명확해요
+    container_name: react-frontend-container2
+    # ports:
+    #  - "3000:80"  리액트 앱 서빙하는 것은 nginx에서 할 것임 80번 포트에서 제공할 것임.
+    networks:
+      - board-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-crud-container2
+    ports:
+      - "80:80"
+    volumes:
+      - ./src/main/frontend/nginx.conf:/etc/nginx/nginx.conf  # 로컬의 nginx.conf 파일을 컨테이너의 설정으로 사용
+      - ./src/main/frontend/build:/usr/share/nginx/html  # React 빌드 폴더를 Nginx와 연결
+    depends_on:
+      - frontend
+      - spring
+    networks:
+      - board-network
+
+
+networks:
+  board-network:
+    name: board-network
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
